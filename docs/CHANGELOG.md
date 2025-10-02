@@ -73,4 +73,88 @@
 
 ---
 
-**다음 작업**: Week 3 채팅 기반 수정 기능
+## 2025-10-02 (저녁)
+
+### Week 3 채팅 기반 수정 기능 완료 ✅
+
+#### 채팅 UI 구현
+- app/views/slides/show.html.erb
+  - 2열 레이아웃 (왼쪽: 슬라이드, 오른쪽: 채팅)
+  - 채팅 메시지 영역 (말풍선 스타일)
+    - 사용자: 오른쪽 정렬, cyan 배경
+    - AI: 왼쪽 정렬, dark 배경
+  - 채팅 입력창 (textarea + 전송 버튼)
+  - Flash 메시지 표시 (success, error)
+
+#### Stimulus 컨트롤러
+- app/javascript/controllers/chat_controller.js
+  - 채팅 메시지 자동 스크롤 (scrollToBottom)
+  - data-controller="chat" 연결
+  - data-chat-target="messages" 연결
+
+#### 라우트 추가
+- config/routes.rb
+  - resources :slides에 update 액션 추가
+  - PATCH/PUT /slides/:id
+
+#### 컨트롤러 로직
+- app/controllers/slides_controller.rb
+  - create 액션 수정
+    - API 키 세션 저장 (session[:api_key])
+    - 원본 문서 세션 저장 (session[:original_document])
+    - 채팅 이력 초기화 (session[:chat_messages] = [])
+  - update 액션 신규 구현
+    - 사용자 메시지 세션 저장
+    - 대화 이력을 포함한 프롬프트 생성
+    - Gemini 재호출
+    - AI 응답 세션 저장
+    - 슬라이드 재생성
+    - 에러 시 메시지 롤백
+
+#### 세션 기반 대화 이력
+- session[:chat_messages] 배열
+  - role: "user" | "assistant"
+  - content: 메시지 내용
+  - timestamp: 생성 시간
+
+#### 사용자 플로우
+1. 슬라이드 생성 (create)
+2. 미리보기 화면에서 채팅 입력
+3. 수정 요청 전송 (update)
+4. Gemini 재호출 (원본 문서 + 대화 이력)
+5. 슬라이드 재생성
+6. 성공 메시지 표시
+
+---
+
+## 2025-10-02 (심야)
+
+### Week 1-2 마일스톤 검증 및 수정 ✅
+
+#### 디자인 시스템 적용
+- app/views/layouts/application.html.erb
+  - Tailwind CSS CDN 추가
+  - Pretendard 폰트 로드
+  - body에 Dark theme 적용 (bg-[#1e1e1e], text-white)
+
+#### Gemini 응답 처리 개선
+- app/services/gemini_client.rb
+  - 코드 블록 제거 로직 추가 (```html ... ``` 패턴)
+  - HTML DOCTYPE 검증 추가
+  - Markdown 반환 감지 및 에러 처리
+
+#### Week 1-2 마일스톤 체크포인트 검증 완료
+- ✅ Gemini API 호출 성공 (에러 핸들링 검증)
+- ✅ HTML 슬라이드 생성 확인 (코드 블록 제거 로직)
+- ✅ DESIGN_GUIDELINES 준수 (Dark theme, Pretendard, Cyan)
+- ✅ iframe 렌더링 (16:9 비율)
+- ✅ Week 3 채팅 기능 (초과 달성)
+
+#### 테스트 준비
+- 테스트 문서: MCP + 자동화 도구 완전 분석 강의자료.md (555줄)
+- API 키 검증 로직 확인
+- 브라우저 UI 디자인 적용 확인
+
+---
+
+**다음 작업**: Week 4 데이터 영속성 (User, Slide, ChatSession 모델)

@@ -59,6 +59,19 @@ class GeminiClient
       raise GeminiApiError, "Gemini API가 빈 응답을 반환했습니다."
     end
 
+    # Gemini가 코드 블록으로 감싸서 반환하는 경우 제거
+    html_code = html_code.strip
+
+    # ```html ... ``` 형태의 코드 블록 제거
+    if html_code.start_with?("```")
+      html_code = html_code.gsub(/\A```(?:html)?\n/, "").gsub(/\n```\z/, "")
+    end
+
+    # <!DOCTYPE html>로 시작하지 않으면 에러
+    unless html_code.strip.start_with?("<!DOCTYPE html>")
+      raise GeminiApiError, "Gemini가 유효한 HTML을 생성하지 못했습니다. Markdown으로 응답했을 가능성이 있습니다."
+    end
+
     html_code
   end
 

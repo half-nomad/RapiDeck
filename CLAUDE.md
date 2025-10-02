@@ -9,22 +9,106 @@
 ### 작업 전 필독
 1. **[docs/PRD.md](docs/PRD.md)** - 제품 요구사항 문서
    - 프로젝트 비전, 목표, 핵심 기능
-   - 기술 스택, 데이터 모델
+   - "무엇을", "왜" 만드는가
    - 작업 시작 전 항상 확인
 
-2. **[docs/DESIGN_GUIDELINES.md](docs/DESIGN_GUIDELINES.md)** - 디자인 시스템 가이드라인
+2. **[docs/TRD.md](docs/TRD.md)** - 기술 요구사항 문서
+   - 기술 스택, 시스템 아키텍처
+   - 데이터 모델 (코드 포함)
+   - "어떻게" 구현하는가
+
+3. **[docs/DESIGN_GUIDELINES.md](docs/DESIGN_GUIDELINES.md)** - 디자인 시스템 가이드라인
    - 색상, 폰트, 컴포넌트 규칙 **엄격 준수**
    - Gemini가 생성할 HTML의 모든 스타일 기준
    - UI 작업 시 필수 참조
 
-3. **[docs/SYSTEM_PROMPT.md](docs/SYSTEM_PROMPT.md)** - Gemini API 시스템 프롬프트
+4. **[docs/SYSTEM_PROMPT.md](docs/SYSTEM_PROMPT.md)** - Gemini API 시스템 프롬프트
    - Gemini에게 전달할 인스트럭션
    - 슬라이드 생성 로직 이해에 필수
 
-4. **[docs/PLAN.md](docs/PLAN.md)** - 개발 로드맵 & 체크리스트
+5. **[docs/PLAN.md](docs/PLAN.md)** - 개발 로드맵 & 체크리스트
    - 주차별 작업 계획
    - 완료 여부 체크
    - 일일/주간 체크리스트
+
+---
+
+## 🤖 Agent 호출 시 필수 사항
+
+> **중요**: Agent는 CLAUDE.md를 자동으로 읽지 못합니다. 따라서 Agent에게 작업 지시 시 반드시 참고 문서를 프롬프트에 명시해야 합니다.
+
+### Agent 프롬프트 템플릿
+
+**모든 Agent 작업 지시 시 다음 형식으로 시작:**
+
+```
+**[작업 전 필수 참고 문서]**
+아래 문서들을 Read 도구로 먼저 읽어주세요:
+
+1. docs/TRD.md - 기술 스택, 시스템 아키텍처, 데이터 모델
+2. docs/PRD.md - 제품 요구사항 및 핵심 기능
+3. docs/DESIGN_GUIDELINES.md - (UI/HTML 작업 시 필수)
+4. docs/SYSTEM_PROMPT.md - (Gemini 연동 작업 시 필수)
+
+**[실제 작업 내용]**
+[구체적인 작업 지시사항을 여기에 작성]
+
+**[제약 사항]**
+- 디자인 가이드라인 엄격 준수
+- PRD 범위 내에서만 작업
+- 불명확한 부분은 즉시 질문
+```
+
+### Agent 호출 예시
+
+#### 예시 1: 서비스 클래스 구현
+```
+**[작업 전 필수 참고 문서]**
+1. docs/TRD.md (5.2 GeminiClient 섹션)
+2. docs/PRD.md (4.1.2 슬라이드 생성 워크플로우)
+3. docs/SYSTEM_PROMPT.md
+
+**[실제 작업 내용]**
+GeminiClient 서비스 클래스를 구현해주세요.
+- Gemini API 호출 (HTTParty 사용)
+- 시스템 프롬프트 로드 (docs/SYSTEM_PROMPT.md)
+- 에러 핸들링 (GeminiApiError 예외)
+- TRD.md의 코드 예시를 참고하되, 실제 동작하는 코드로 작성
+
+**[제약 사항]**
+- PRD 9.1절 보안 정책 준수 (API 키 안전 처리)
+- 명확한 에러 메시지 제공
+- 30페이지 제한 로직 포함
+```
+
+#### 예시 2: UI 컴포넌트 구현
+```
+**[작업 전 필수 참고 문서]**
+1. docs/DESIGN_GUIDELINES.md (전체)
+2. docs/PRD.md (4.1.4 대시보드)
+3. docs/TRD.md (4.2 Slide 모델)
+
+**[실제 작업 내용]**
+대시보드 UI를 구현해주세요.
+- 최근 5개 슬라이드 목록 (썸네일 + 제목 + 날짜)
+- Pin/Unpin 버튼
+- 삭제 버튼 (경고 모달)
+- Turbo Frames 사용
+
+**[제약 사항]**
+- DESIGN_GUIDELINES의 색상 팔레트만 사용
+- 폰트는 Pretendard만 사용
+- 슬라이드 크기는 960px × 540px 유지
+```
+
+#### 예시 3: 간단한 코드 수정 (문서 참조 불필요)
+```
+**[작업 내용]**
+User 모델의 email validation에 uniqueness 체크를 추가해주세요.
+
+**[제약 사항]**
+- case_insensitive: true 옵션 포함
+```
 
 ---
 
@@ -61,7 +145,8 @@ RapiDeck/
 │   └── models/
 │       └── design_system/ # 디자인 시스템 모델
 ├── docs/
-│   ├── PRD.md             # 제품 요구사항 (필독)
+│   ├── PRD.md             # 제품 요구사항 (무엇을, 왜)
+│   ├── TRD.md             # 기술 요구사항 (어떻게 구현)
 │   ├── DESIGN_GUIDELINES.md  # 디자인 가이드라인 (엄격 준수)
 │   ├── SYSTEM_PROMPT.md   # Gemini 프롬프트
 │   ├── PLAN.md            # 개발 로드맵
@@ -201,12 +286,13 @@ RapiDeck/
 | 작업 | 참조 문서 | 섹션 |
 |------|-----------|------|
 | 새 기능 추가 | PRD.md | 4. 핵심 기능 |
+| 기술 구현 | TRD.md | 5. 핵심 서비스 클래스 |
+| 데이터 모델 | TRD.md | 4. 데이터 모델 |
 | UI 디자인 | DESIGN_GUIDELINES.md | 전체 |
-| Gemini 연동 | SYSTEM_PROMPT.md | 전체 |
+| Gemini 연동 | TRD.md + SYSTEM_PROMPT.md | 6. API 명세 |
 | 일정 확인 | PLAN.md | 해당 Week |
 | 배포 | DEPLOYMENT.md | 전체 |
-| 보안 | PRD.md | 9. 보안 및 개인정보 |
-| 데이터 모델 | PRD.md | 8. 데이터 모델 |
+| 보안 구현 | TRD.md | 7. 보안 구현 |
 
 ---
 

@@ -13,12 +13,11 @@
 3. [타겟 사용자](#3-타겟-사용자)
 4. [핵심 기능](#4-핵심-기능)
 5. [사용자 워크플로우](#5-사용자-워크플로우)
-6. [기술 스택](#6-기술-스택)
-7. [시스템 아키텍처](#7-시스템-아키텍처)
-8. [데이터 모델](#8-데이터-모델)
-9. [보안 및 개인정보](#9-보안-및-개인정보)
-10. [개발 로드맵](#10-개발-로드맵)
-11. [성공 지표](#11-성공-지표)
+6. [데이터 정책](#6-데이터-정책)
+7. [보안 및 개인정보](#7-보안-및-개인정보)
+8. [개발 로드맵](#8-개발-로드맵)
+9. [성공 지표](#9-성공-지표)
+10. [부록](#10-부록)
 
 ---
 
@@ -232,211 +231,36 @@
 
 ---
 
-## 6. 기술 스택
+## 6. 데이터 정책
 
-### 6.1 Backend
-- **Ruby**: 3.4.4
-- **Rails**: 8.0.2
-- **Database**: SQLite3 2.7.4
-- **Background Jobs**: Solid Queue
-- **WebSocket**: Solid Cable (실시간 진행 상태)
-- **Caching**: Solid Cache
-
-### 6.2 Frontend
-- **CSS Framework**: Tailwind CSS 4
-- **JavaScript**: Hotwire (Turbo + Stimulus)
-- **Module Bundler**: Importmap
-- **Charts**: Chart.js (CDN)
-- **Font**: Pretendard (CDN)
-
-### 6.3 AI & External APIs
-- **AI Model**: Gemini API (Google AI Studio)
-- **PDF 변환**: Grover gem (Headless Chrome)
-- **PPT 변환**: python-pptx (시스템 콜) 또는 스크린샷 기반
-
-### 6.4 Infrastructure
-- **Containerization**: Docker
-- **Deployment**: Kamal
-- **Hosting**: Digital Ocean
-- **Web Server**: Puma
-- **Proxy**: Kamal Proxy
-
-### 6.5 Security
-- **암호화**: Rails Encrypted Credentials, attr_encrypted gem
-- **OAuth**: Google OAuth2
-- **환경 변수**: Kamal Secrets
-
----
-
-## 7. 시스템 아키텍처
-
-### 7.1 전체 아키텍처
-```
-[사용자 브라우저]
-    ↓ HTTPS
-[Kamal Proxy (Traefik)]
-    ↓
-[Rails 8 Application]
-    ├─ Turbo/Stimulus (UI)
-    ├─ Solid Queue (백그라운드 작업)
-    ├─ Solid Cable (WebSocket)
-    └─ Solid Cache (캐싱)
-    ↓
-[SQLite Database]
-    ├─ 사용자 정보 (암호화)
-    ├─ 슬라이드 데이터
-    └─ 작업 큐
-
-[External Services]
-    ├─ Gemini API (슬라이드 생성)
-    ├─ Google OAuth (로그인)
-    └─ Headless Chrome (PDF 변환)
-```
-
-### 7.2 핵심 모듈
-
-#### 7.2.1 DocumentParser Service
-- 입력 문서 분석
-- 페이지 수 체크 (30페이지 제한)
-- 텍스트/마크다운 파싱
-
-#### 7.2.2 GeminiClient Service
-- Gemini API 호출
-- 시스템 프롬프트 + 유저 프롬프트 전송
-- HTML 코드 응답 처리
-- 에러 핸들링
-
-#### 7.2.3 SlideGenerator Service
-- 슬라이드 구조화
-- 디자인 가이드라인 검증
-- HTML 코드 저장
-
-#### 7.2.4 ConversionService
-- HTML → PDF (Grover)
-- HTML → PPT (python-pptx)
-- 백그라운드 작업 큐 관리
-
-#### 7.2.5 ChatService
-- 채팅 메시지 관리
-- 컨텍스트 유지 (세션 기반)
-- Gemini API 재호출
-
----
-
-## 8. 데이터 모델
-
-### 8.1 주요 모델
-
-#### User (사용자)
-```ruby
-class User < ApplicationRecord
-  # Authentication
-  has_secure_password
-
-  # OAuth
-  has_many :oauth_providers
-
-  # Gemini API Key (암호화)
-  attr_encrypted :gemini_api_key
-
-  # Associations
-  has_many :slides, dependent: :destroy
-  has_many :chat_sessions, dependent: :destroy
-end
-```
-
-#### Slide (슬라이드)
-```ruby
-class Slide < ApplicationRecord
-  belongs_to :user
-  has_many :slide_versions, dependent: :destroy
-  has_one :chat_session, dependent: :destroy
-
-  # Fields
-  # - title: string
-  # - content_type: string (lecture/report/proposal/newsletter)
-  # - html_code: text
-  # - thumbnail_url: string
-  # - pinned: boolean (default: false)
-  # - created_at: datetime
-  # - updated_at: datetime
-
-  # Validations
-  validates :title, presence: true
-  validate :pin_limit
-
-  # Scopes
-  scope :pinned, -> { where(pinned: true) }
-  scope :recent, -> { order(created_at: :desc).limit(5) }
-
-  private
-
-  def pin_limit
-    if pinned && user.slides.pinned.count >= 4
-      errors.add(:pinned, "최대 4개까지 고정할 수 있습니다.")
-    end
-  end
-end
-```
-
-#### ChatSession (채팅 세션)
-```ruby
-class ChatSession < ApplicationRecord
-  belongs_to :user
-  belongs_to :slide, optional: true
-  has_many :chat_messages, dependent: :destroy
-
-  # Fields
-  # - session_id: string (UUID)
-  # - context: text (JSON 저장)
-  # - created_at: datetime
-end
-```
-
-#### ChatMessage (채팅 메시지)
-```ruby
-class ChatMessage < ApplicationRecord
-  belongs_to :chat_session
-
-  # Fields
-  # - role: string (user/assistant)
-  # - content: text
-  # - created_at: datetime
-end
-```
-
-#### ConversionJob (변환 작업)
-```ruby
-class ConversionJob < ApplicationRecord
-  belongs_to :slide
-
-  # Fields
-  # - format: string (pdf/ppt)
-  # - status: string (pending/processing/completed/failed)
-  # - file_url: string
-  # - error_message: text
-  # - created_at: datetime
-  # - updated_at: datetime
-end
-```
-
-### 8.2 데이터 저장 정책
+### 6.1 저장 정책
 - **슬라이드 제한**: 사용자당 최대 5개
 - **Pin 제한**: 5개 중 최대 4개
 - **삭제 규칙**: Pin되지 않은 슬라이드 중 가장 오래된 것부터 자동 삭제 (경고 후)
 - **채팅 세션**: 슬라이드당 1개 세션, 슬라이드 삭제 시 함께 삭제
 
+### 6.2 데이터 모델 개요
+- **User**: 사용자 정보 및 API 키 (암호화)
+- **Slide**: 슬라이드 콘텐츠 (HTML, 메타데이터, Pin 상태)
+- **ChatSession**: 대화 세션 및 컨텍스트
+- **ChatMessage**: 개별 채팅 메시지 (user/assistant)
+- **ConversionJob**: PDF/PPT 변환 작업 상태
+
+*상세 데이터 모델 및 코드는 [TRD.md](./TRD.md) 참조*
+
 ---
 
-## 9. 보안 및 개인정보
+## 7. 보안 및 개인정보
 
-### 9.1 보안 정책
-- **API 키 암호화**: `attr_encrypted` gem으로 DB 암호화 저장
+### 7.1 보안 정책
+- **API 키 암호화**: DB 암호화 저장
 - **사용자 정보 암호화**: 모든 개인정보 암호화
 - **운영사 열람 불가**: 운영자도 개인정보 복호화 불가
-- **HTTPS 필수**: Kamal Proxy에서 Let's Encrypt SSL 자동 인증
+- **HTTPS 필수**: SSL 인증서 자동 발급
 
-### 9.2 개인정보 처리 방침
+*보안 구현 방법은 [TRD.md](./TRD.md) 참조*
+
+### 7.2 개인정보 처리 방침
 - **데이터 소유권**:
   - 슬라이드 콘텐츠: 사용자 소유
   - 디자인 시스템: 운영사 소유
@@ -444,7 +268,7 @@ end
 - **제3자 제공**: Gemini API에 문서 내용 전송 (사용자 API 키 사용)
 - **쿠키 사용**: 세션 관리용 필수 쿠키만 사용
 
-### 9.3 서비스 약관 명시 사항
+### 7.3 서비스 약관 명시 사항
 ```
 1. 사용자 데이터 소유권
    - 슬라이드 콘텐츠: 사용자 귀속
@@ -465,49 +289,46 @@ end
 
 ---
 
-## 10. 개발 로드맵
+## 8. 개발 로드맵
 
-### Phase 1: MVP (Beta) - 2개월
-- **Week 1-2**: 기본 인프라 및 인증
-  - Rails 8 프로젝트 설정 완료 ✅
-  - Google OAuth 연동
-  - 사용자 모델 및 API 키 관리
+### Phase 1: MVP (Beta) - 7주
+**핵심 원칙:** 기술적 리스크 우선 검증 → 사용자 경험 개선 → 프로덕션 준비
 
-- **Week 3-4**: 문서 입력 및 Gemini 연동
-  - DocumentParser 개발
-  - GeminiClient 개발
-  - 채팅 인터페이스 구현
+- **Week 1-2**: 핵심 기능 프로토타입 ⭐
+  - Gemini API 연동 및 슬라이드 생성 검증
+  - 기술적 리스크 파악
 
-- **Week 5-6**: 슬라이드 생성 및 미리보기
-  - SlideGenerator 개발
-  - 디자인 가이드라인 적용
-  - 미리보기 UI 구현
+- **Week 3**: 채팅 기반 수정 기능
+  - 사용자 경험 완성
 
-- **Week 7**: 변환 기능
-  - PDF 변환 (Grover)
-  - PPT 변환 (python-pptx)
-  - 백그라운드 작업 처리
+- **Week 4**: 데이터 영속성
+  - 슬라이드 저장 및 관리
 
-- **Week 8**: 테스트 및 배포
-  - 통합 테스트
-  - Kamal 배포
-  - 베타 사용자 모집
+- **Week 5**: 결과물 다운로드
+  - HTML/PDF 변환
 
-### Phase 2: 템플릿 확장 - 3개월
-- **Month 3**: 템플릿 시스템 설계
-- **Month 4**: 3-5개 템플릿 제작
-- **Month 5**: 사용자 커스텀 템플릿 업로드 기능
+- **Week 6**: 인증 시스템 강화
+  - OAuth 및 API 키 관리
 
-### Phase 3: 고급 기능 - 3개월
-- **Month 6**: 이미지 삽입 워크플로우
-- **Month 7**: 레퍼런스 기반 모드
-- **Month 8**: 협업 기능 (선택적)
+- **Week 7**: 테스트 및 배포
+  - 통합 테스트 및 베타 출시
+
+*상세 체크리스트는 [PLAN.md](./PLAN.md) 참조*
+
+### Phase 2: 템플릿 확장 (3개월)
+- 다양한 템플릿 제공
+- 사용자 커스텀 템플릿 업로드
+
+### Phase 3: 고급 기능 (3개월)
+- 이미지 삽입
+- 레퍼런스 기반 모드
+- 협업 기능
 
 ---
 
-## 11. 성공 지표
+## 9. 성공 지표
 
-### 11.1 핵심 지표 (KPI)
+### 9.1 핵심 지표 (KPI)
 - **사용자 성장**:
   - 월간 활성 사용자 (MAU): 베타 목표 100명
   - 가입 전환율: 방문자 대비 20% 목표
@@ -522,7 +343,7 @@ end
   - PDF/PPT 변환 성공률: 90% 이상
   - 사용자 만족도: NPS 40 이상
 
-### 11.2 사용자 피드백
+### 9.2 사용자 피드백
 - **정량 지표**:
   - 별점 평가: 4.0/5.0 이상
   - 추천 의향: 70% 이상
@@ -532,7 +353,7 @@ end
   - 기능 개선 요청 수집
   - 버그 리포트 대응 속도 (24시간 이내)
 
-### 11.3 비즈니스 지표
+### 9.3 비즈니스 지표
 - **베타 기간**: 무료 정책
 - **향후 수익화**:
   - Freemium 모델 (월 5개 슬라이드 무료, 이후 유료)
@@ -541,43 +362,20 @@ end
 
 ---
 
-## 12. 제약 사항 및 가정
+## 10. 부록
 
-### 12.1 기술적 제약
-- **Gemini API 의존성**: Google AI Studio 서비스 안정성에 의존
-- **SQLite 확장성**: 대규모 트래픽 시 PostgreSQL 마이그레이션 필요
-- **서버 사이드 변환**: PDF/PPT 변환 시 서버 리소스 사용량 증가
-
-### 12.2 가정
-- 사용자는 Gemini API 키를 직접 발급할 수 있음
-- 입력 문서는 30페이지 이내로 작성 가능
-- 사용자는 HTML 파일 다운로드 후 로컬에서 편집 가능
-
-### 12.3 베타 기간 제한
-- 템플릿 1개만 제공
-- 이미지 삽입 미지원
-- 협업 기능 미지원
-- 무료 정책 (API 비용은 사용자 부담)
-
----
-
-## 13. 부록
-
-### 13.1 참조 문서
+### 10.1 참조 문서
+- [TRD.md](./TRD.md): 기술 요구사항 및 구현 명세
 - [DESIGN_GUIDELINES.md](./DESIGN_GUIDELINES.md): 디자인 시스템 상세 가이드
 - [SYSTEM_PROMPT.md](./SYSTEM_PROMPT.md): Gemini API 시스템 프롬프트
 - [PLAN.md](./PLAN.md): 개발 로드맵 및 체크리스트
 - [DEPLOYMENT.md](../DEPLOYMENT.md): Kamal 배포 가이드
-- [CHANGELOG.md](./CHANGELOG.md): 개발 로그
 
-### 13.2 외부 레퍼런스
-- [Rails 8 공식 문서](https://guides.rubyonrails.org/)
-- [Gemini API 문서](https://ai.google.dev/docs)
-- [Tailwind CSS 문서](https://tailwindcss.com/docs)
-- [Chart.js 문서](https://www.chartjs.org/docs/)
+### 10.2 문서 히스토리
+- v1.0.0 (2025-10-02): 초기 버전
+- v1.1.0 (2025-10-02): 기술 명세 TRD로 분리, 개발 순서 변경
 
 ---
 
 **작성자**: Claude + 사용자
-**승인자**: TBD
 **다음 검토 예정일**: 베타 출시 후 1개월

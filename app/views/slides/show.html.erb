@@ -1,0 +1,65 @@
+<div class="min-h-screen bg-[#1e1e1e] text-white p-8">
+  <div class="max-w-7xl mx-auto">
+    <header class="mb-8 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold mb-1" style="font-family: 'Pretendard', sans-serif;">
+          <%= @slide_data[:title] %>
+        </h1>
+        <p class="text-sm text-gray-400">
+          생성 시간: <%= @slide_data[:generated_at].strftime('%Y-%m-%d %H:%M') %>
+        </p>
+      </div>
+      <div class="flex gap-3">
+        <%= link_to "새 슬라이드 만들기", new_slide_path, class: "px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" %>
+        <button
+          onclick="downloadHTML()"
+          class="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg transition"
+        >
+          HTML 다운로드
+        </button>
+      </div>
+    </header>
+
+    <div class="bg-[#2d2d2d] border border-gray-700 rounded-lg p-4">
+      <div class="mb-4 text-sm text-gray-400">
+        슬라이드 미리보기 (16:9 비율)
+      </div>
+      <div class="bg-black rounded-lg overflow-hidden" style="aspect-ratio: 16/9;">
+        <iframe
+          id="slide-iframe"
+          srcdoc="<%= ERB::Util.html_escape(@slide_data[:html_code]) %>"
+          class="w-full h-full border-0"
+          sandbox="allow-scripts"
+        ></iframe>
+      </div>
+    </div>
+
+    <div class="mt-6 p-4 bg-[#2d2d2d] border border-gray-700 rounded-lg">
+      <details>
+        <summary class="cursor-pointer font-semibold hover:text-cyan-400 transition">
+          HTML 코드 보기
+        </summary>
+        <pre class="mt-4 p-4 bg-[#1e1e1e] rounded overflow-x-auto text-xs"><code><%= @slide_data[:html_code] %></code></pre>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+  function downloadHTML() {
+    const htmlContent = <%= @slide_data[:html_code].to_json.html_safe %>;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '<%= @slide_data[:title].gsub(/[^0-9A-Za-z가-힣\s]/, '') %>_<%= Time.current.strftime('%Y%m%d_%H%M%S') %>.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">

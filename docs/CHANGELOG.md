@@ -157,4 +157,64 @@
 
 ---
 
+## 2025-10-04
+
+### 프로덕션 준비: API 모델 업데이트 및 세션 스토어 개선 ✅
+
+#### Gemini API 모델 업데이트
+- app/services/gemini_client.rb
+  - API 엔드포인트 변경: `gemini-pro` → `gemini-2.5-flash`
+  - 최신 Gemini 2.5 Flash 모델 적용
+  - Context7 문서 확인 후 적용
+
+#### ActiveRecord Session Store 도입
+- Gemfile
+  - `activerecord-session_store` gem 추가 (~> 2.2)
+- config/initializers/session_store.rb
+  - ActiveRecord 기반 세션 저장소 설정
+  - Cookie overflow 문제 해결 (151KB → DB 저장)
+- db/migrate/20251003160721_add_sessions_table.rb
+  - sessions 테이블 생성 (session_id, data)
+  - 인덱스 추가 (성능 최적화)
+- bundle install 완료
+- rails db:migrate 완료
+
+#### 라우팅 수정
+- config/routes.rb
+  - `/slides/current` 경로 추가 (세션 기반 슬라이드 미리보기)
+  - `resources :slides`보다 먼저 정의하여 올바른 라우트 매칭
+- app/controllers/slides_controller.rb
+  - 모든 리다이렉트를 `current_slide_path`로 업데이트
+  - create, update 액션에서 일관된 경로 사용
+
+#### 시스템 프롬프트 개선
+- docs/SYSTEM_PROMPT.md
+  - 2단계 워크플로우 제거 (질문 단계 삭제)
+  - 베타 버전 최적화: 항상 HTML을 직접 생성
+  - "DO NOT ask questions" 지침 추가
+  - 불완전한 문서 처리 로직 간소화
+
+#### 디버깅 개선
+- app/services/gemini_client.rb
+  - Gemini API 응답 로깅 추가 (처음 500자)
+  - HTML 검증 실패 시 상세 로그 (처음 1000자)
+  - 에러 메시지 개선 ("다시 시도해주세요")
+
+#### 통합 테스트
+- 슬라이드 생성 플로우 검증 완료
+  - ✅ 문서 입력 → API 호출 → HTML 생성
+  - ✅ 세션 저장 (ActiveRecord)
+  - ✅ 슬라이드 미리보기 (/slides/current)
+  - ✅ 채팅 기반 수정 기능
+- 서버 로그 확인
+  - Gemini API 호출 성공 (103초 소요)
+  - 세션 데이터 DB 저장 성공
+
+#### 기술 부채 해결
+- Cookie overflow 문제 해결 (151KB 세션 데이터)
+- 구형 Gemini API 모델 사용 문제 해결
+- 라우팅 충돌 문제 해결
+
+---
+
 **다음 작업**: Week 4 데이터 영속성 (User, Slide, ChatSession 모델)

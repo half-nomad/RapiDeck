@@ -15,7 +15,7 @@ class GeminiClient
 
   def generate_slide(user_prompt)
     response = self.class.post(
-      "/v1beta/models/gemini-pro:generateContent",
+      "/v1beta/models/gemini-2.5-flash:generateContent",
       query: { key: @api_key },
       headers: { "Content-Type" => "application/json" },
       body: request_body(user_prompt).to_json,
@@ -56,8 +56,11 @@ class GeminiClient
     html_code = response_data.dig("candidates", 0, "content", "parts", 0, "text")
 
     if html_code.blank?
+      Rails.logger.error "Gemini API 응답: #{response_data.inspect}"
       raise GeminiApiError, "Gemini API가 빈 응답을 반환했습니다."
     end
+
+    Rails.logger.info "Gemini 원본 응답 (처음 500자): #{html_code[0..500]}"
 
     # Gemini가 코드 블록으로 감싸서 반환하는 경우 제거
     html_code = html_code.strip
@@ -65,11 +68,13 @@ class GeminiClient
     # ```html ... ``` 형태의 코드 블록 제거
     if html_code.start_with?("```")
       html_code = html_code.gsub(/\A```(?:html)?\n/, "").gsub(/\n```\z/, "")
+      html_code = html_code.strip
     end
 
     # <!DOCTYPE html>로 시작하지 않으면 에러
-    unless html_code.strip.start_with?("<!DOCTYPE html>")
-      raise GeminiApiError, "Gemini가 유효한 HTML을 생성하지 못했습니다. Markdown으로 응답했을 가능성이 있습니다."
+    unless html_code.start_with?("<!DOCTYPE html>")
+      Rails.logger.error "Gemini가 HTML이 아닌 응답을 생성함 (처음 1000자): #{html_code[0..1000]}"
+      raise GeminiApiError, "Gemini가 유효한 HTML을 생성하지 못했습니다. 다시 시도해주세요."
     end
 
     html_code

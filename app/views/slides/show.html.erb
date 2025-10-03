@@ -91,7 +91,7 @@
 
         <!-- 채팅 입력창 -->
         <div class="p-4 border-t border-gray-700">
-          <%= form_with url: update_slide_path("current"), method: :patch, class: "flex gap-2", data: { turbo: false } do |f| %>
+          <%= form_with url: update_current_slide_path, method: :patch, class: "flex gap-2", data: { turbo: false } do |f| %>
             <%= f.text_area :message,
               rows: 2,
               class: "flex-1 bg-[#1e1e1e] border border-gray-700 rounded-lg p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition resize-none",

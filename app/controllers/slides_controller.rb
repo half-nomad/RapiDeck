@@ -38,7 +38,7 @@ class SlidesController < ApplicationController
       session[:original_document] = parsed_data[:content]
       session[:chat_messages] = [] # 채팅 이력 초기화
 
-      redirect_to slide_path("current")
+      redirect_to current_slide_path
     rescue GeminiApiError => e
       flash[:error] = e.message
       redirect_to new_slide_path
@@ -62,7 +62,7 @@ class SlidesController < ApplicationController
 
     if message.blank?
       flash[:error] = "메시지를 입력해주세요."
-      redirect_to slide_path("current") and return
+      redirect_to current_slide_path and return
     end
 
     @slide_data = session[:current_slide]
@@ -125,16 +125,16 @@ class SlidesController < ApplicationController
       session[:current_slide] = @slide_data
 
       flash[:success] = "슬라이드가 수정되었습니다."
-      redirect_to slide_path("current")
+      redirect_to current_slide_path
     rescue GeminiApiError => e
       # 실패한 사용자 메시지 제거
       session[:chat_messages].pop
       flash[:error] = e.message
-      redirect_to slide_path("current")
+      redirect_to current_slide_path
     rescue StandardError => e
       session[:chat_messages].pop
       flash[:error] = "슬라이드 수정 중 오류가 발생했습니다: #{e.message}"
-      redirect_to slide_path("current")
+      redirect_to current_slide_path
     end
   end
 end

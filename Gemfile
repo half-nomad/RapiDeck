@@ -66,3 +66,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "activerecord-session_store", "~> 2.2"

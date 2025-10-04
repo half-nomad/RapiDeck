@@ -68,3 +68,5 @@ group :test do
 end
 
 gem "activerecord-session_store", "~> 2.2"
+
+gem "dotenv-rails", "~> 3.1", groups: [:development, :test]

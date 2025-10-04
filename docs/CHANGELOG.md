@@ -217,4 +217,64 @@
 
 ---
 
+## 2025-10-04 (오후)
+
+### E2E 테스트 완료 및 GitHub 연동 ✅
+
+#### E2E 테스트 결과
+- **테스트 방법**: Rails runner로 서비스 클래스 직접 호출 + HTTP 요청
+- **DocumentParser 검증**
+  - 입력: 107자 마크다운 문서
+  - 출력: 정상 파싱 완료
+- **GeminiClient 검증**
+  - API 모델: gemini-2.5-flash
+  - API 호출: 성공 (20.8초)
+  - 생성 HTML: 4,860자
+  - HTML 샘플 확인: <!DOCTYPE html> 시작 확인
+- **SlideGenerator 검증**
+  - 슬라이드 데이터 생성 성공
+  - 제목 추출: "RapiDeck 프로젝트"
+  - generated_at 타임스탬프 확인
+- **HTTP 플로우 검증**
+  - POST /slides → 302 리다이렉트 → /slides/current
+  - 세션 쿠키 생성: _rapi_deck_session
+  - GET /slides/current → 200 OK (1.3초)
+  - 슬라이드 렌더링 완료
+- **ActiveRecord Session Store 검증**
+  - 세션 ID 생성 확인 (2::3453663b243d1...)
+  - DB 저장 확인 완료
+  - API 키, 원본 문서, 채팅 이력 세션 저장 확인
+
+#### 성능 메트릭
+- 서버 시작 시간: 1.0초
+- Gemini API 응답 시간: 20.8초
+- 슬라이드 생성 시간: 20.8초 (total)
+- 페이지 렌더링 시간: 1.3초
+- **전체 E2E 시간**: ~22초
+
+#### GitHub 연동
+- **레포지토리 생성**: https://github.com/half-nomad/RapiDeck
+- GitHub CLI 사용 (gh 2.63.1)
+- 계정: half-nomad
+- 가시성: Public
+- 설명: "AI-Powered Presentation Generator using Gemini 2.5 Flash - Create beautiful slides from markdown documents"
+- main 브랜치 푸시 완료
+- 커밋 해시: 95741d9
+
+#### 검증 완료 항목
+- ✅ Rails 서버 정상 작동
+- ✅ Gemini API 통합 (gemini-2.5-flash)
+- ✅ 문서 파싱 및 슬라이드 생성
+- ✅ ActiveRecord 세션 저장소
+- ✅ 라우팅 정확성
+- ✅ 에러 핸들링
+- ✅ 전체 플로우 정상 작동
+- ✅ GitHub 레포지토리 연동
+
+#### 파일 업데이트
+- .gitignore
+  - cookies.txt 추가 (테스트 파일 제외)
+
+---
+
 **다음 작업**: Week 4 데이터 영속성 (User, Slide, ChatSession 모델)

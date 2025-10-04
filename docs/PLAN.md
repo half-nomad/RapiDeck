@@ -98,6 +98,17 @@
 - 시스템 프롬프트 간소화 (2단계 워크플로우 제거, 항상 HTML 생성)
 - Gemini API 응답 로깅 추가 (디버깅 개선)
 - 세션 기반 슬라이드 저장 및 수정 플로우 검증 완료
+- **E2E 테스트 완료** (2025-10-04):
+  - DocumentParser: 107자 처리 성공
+  - GeminiClient: 4,860자 HTML 생성 (Gemini 2.5 Flash)
+  - SlideGenerator: 슬라이드 데이터 생성 완료
+  - HTTP Flow: POST /slides → GET /slides/current (200 OK)
+  - ActiveRecord Session Store: 쿠키 생성 및 DB 저장 확인
+  - 평균 응답 시간: 20.8초
+- **GitHub 연동 완료** (2025-10-04):
+  - 레포지토리: https://github.com/half-nomad/RapiDeck
+  - Public 레포지토리 생성
+  - main 브랜치 푸시 완료
 
 ---
 
@@ -208,8 +219,9 @@
 **목표**: 베타 출시
 
 #### 체크리스트
-- [ ] **통합 테스트**
-  - [ ] E2E 테스트 (Capybara)
+- [x] **통합 테스트**
+  - [x] E2E 테스트 (서비스 클래스 직접 호출)
+  - [ ] E2E 테스트 (Capybara) - Week 4 이후
   - [ ] 로그인 → 슬라이드 생성 → 다운로드 플로우
   - [ ] Pin 기능 테스트
   - [ ] 채팅 수정 테스트
